@@ -1,0 +1,143 @@
+--// EPIK R15 DANCE TOOLS – ÁUDIO DO GITHUB + ANIMAÇÃO REAL \\
+local Players = game:GetService("Players")
+local User   = Players.LocalPlayer
+
+--------------------------------------------------------------------
+-- Configuração
+--------------------------------------------------------------------
+local FOLDER_NAME = "DancesAudios"      
+local AUDIO_EXT   = ".ogg"              
+
+-- Cria a pasta se ainda não existir
+if not isfolder(FOLDER_NAME) then
+    makefolder(FOLDER_NAME)
+    print("[+] Pasta criada: ./"..FOLDER_NAME)
+end
+
+--------------------------------------------------------------------
+-- tABELA DE DANÇAS
+--    nome = { animId = "ID_ANIMAÇÃO", githubUrl = "RAW_URL" }
+--------------------------------------------------------------------
+local Dances = {
+    ["RatDance"]               = { animId = "75132386767391",   githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/rat_dance.ogg" },
+    ["Rambunctious"]           = { animId = "124799741487022",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/rambunctious.ogg" },
+    ["L"]                      = { animId = "87560149954505",   githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/take_the_l.ogg" },
+    ["Squingle"]               = { animId = "120729591181174",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/squingle.ogg" },
+    ["Gangnam Style"]          = { animId = "118329687900633",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/gangnam_style.ogg" },
+    ["JellyTime"]              = { animId = "100267888506831",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/jelly_time.ogg" },
+    ["Califorina Girls"]       = { animId = "84430246447182",   githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/california_girls.ogg" },
+    ["Kazotsky Kick"]          = { animId = "124127867376874",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/kazotsky_kick.ogg" },
+    ["Monster Mash"]           = { animId = "119716577340277",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/monster_mash.ogg" },
+    ["Metro Man"]              = { animId = "112847019488635",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/metro_man.ogg" },
+    ["ElectroSwing"]           = { animId = "105851216004006",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/electro_swing.ogg" },
+    ["Locked"]                 = { animId = "110145155419199",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/locked.ogg" },
+    ["Chronoshift"]            = { animId = "100757244868686",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/chronoshift.ogg" },
+    ["Tenna"]                  = { animId = "115831496985107",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/tenna.ogg" },
+    ["HipShop"]                = { animId = "123525328389185",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/hip_shop.ogg" },
+    ["PogoDance"]              = { animId = "131755036710227",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/pogo_dance.ogg" },
+    ["Gangnam Style if was cool"] = { animId = "116468071022853", githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/gangnam_cool.ogg" },
+    ["Hakari"]                 = { animId = "122147154162464",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/hakari.ogg" },
+    ["AronaDance"]             = { animId = "113818946774721",  githubUrl = "https://raw.githubusercontent.com/roblox-dances/audios/main/arona_dance.ogg" }
+}
+
+--------------------------------------------------------------------
+-- Baixa aúdio
+--------------------------------------------------------------------
+local function downloadAudio(name, url)
+    local filePath = FOLDER_NAME.."/"..name..AUDIO_EXT
+
+    if isfile(filePath) then
+        print("[OK] Áudio já existe: "..filePath)
+        return filePath
+    end
+
+    local ok, data = pcall(function()
+        return game:HttpGet(url, true)
+    end)
+
+    if ok and data and #data > 1500 then
+        writefile(filePath, data)
+        print("[+] Baixado: "..filePath)
+        task.wait(0.35)   -- evita flood
+        return filePath
+    else
+        warn("[-] Falha ao baixar: "..name.." → "..url)
+        return nil
+    end
+end
+
+--------------------------------------------------------------------
+-- Sistema de criar tools.
+--------------------------------------------------------------------
+local function createTool(name, data)
+    local filePath = downloadAudio(name, data.githubUrl)
+    if not filePath then
+        warn("[-] Tool ignorada: "..name.." (áudio não baixado)")
+        return
+    end
+
+    local tool = Instance.new("Tool")
+    tool.Name           = name
+    tool.RequiresHandle = false
+    tool.CanBeDropped   = false
+    tool.ToolTip        = "EPIK R15 DANCEZZ"
+
+    local anim = Instance.new("Animation")
+    anim.AnimationId = "rbxassetid://"..data.animId
+
+    local animTrack
+
+    tool.Equipped:Connect(function()
+        local char = User.Character or User.CharacterAdded:Wait()
+        local hum  = char:WaitForChild("Humanoid")
+        local hrp  = char:WaitForChild("HumanoidRootPart")
+
+        -- Animator
+        local animator = hum:FindFirstChildOfClass("Animator")
+        if not animator then
+            animator = Instance.new("Animator", hum)
+        end
+
+        pcall(function()
+            animTrack = animator:LoadAnimation(anim)
+            animTrack:Play()
+        end)
+
+        -- Som local
+        local sound = Instance.new("Sound")
+        sound.Name      = "EPIK R15 DANCEZZ"
+        sound.SoundId   = "rbxasset://../"..filePath
+        sound.Volume    = 1
+        sound.Looped    = true
+        sound.Parent    = hrp
+        sound:Play()
+    end)
+
+    tool.Unequipped:Connect(function()
+        if animTrack and animTrack.IsPlaying then
+            animTrack:Stop()
+        end
+        local hrp = User.Character and User.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local s = hrp:FindFirstChild("EPIK R15 DANCEZZ")
+            if s then s:Destroy() end
+        end
+    end)
+
+    tool.Parent = User:WaitForChild("Backpack")
+    print("[TOOL] Criada: "..name.." | Anim ID: "..data.animId)
+end
+
+--------------------------------------------------------------------
+-- Download
+--------------------------------------------------------------------
+print("Iniciando download de "..#Dances.." áudios + criação de Tools...")
+
+for name, data in pairs(Dances) do
+    task.spawn(function()
+        createTool(name, data)
+    end)
+end
+
+print("Tudo iniciado! Áudios → ./"..FOLDER_NAME)
+print("Tools aparecerão no Backpack conforme os arquivos forem baixados.")
